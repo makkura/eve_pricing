@@ -1,0 +1,49 @@
+<script src='/vendor/jquery-1.9.1.min.js'></script>
+<script src='/vendor/jquery_tablesorter/jquery.tablesorter.js'></script>
+<style>
+	table.tablesorter thead tr th { text-align: center; }
+	table.tablesorter tbody tr td { text-align: right; }
+	.tcenter { text-align: center; }
+	.tright  { text-align: right; }
+</style>
+
+
+<h3><%= @title %></h3>
+<table cellspacing="1" class="tablesorter" id="materials">
+	<thead>
+		<tr>
+			<th>Type ID</th>
+			<th>Name</th>
+			<th>Minimum</th>
+			<th>Maximum</th>
+			<th>Average</th>
+			<th>Build</th>
+			<th>Profit</th>
+			<th>History</th>
+		<tr>
+	</thead>
+	<tbody>
+		<% for @item in @list %>
+			<% @history = @item.history.last %>
+			<% if @history %>
+			<tr>
+				<td><%= @item.typeid %></td>
+				<td class="tcenter"><%= @item.name %></td>
+				<td><%= @history.min %></td>
+				<td><%= @history.max %></td>
+				<td><%= @history.avg %></td>
+				<td><%= "%.2f" % @prices[@item.typeid] %></td>
+				<td><%= "%.2f" % (((@history.avg - @prices[@item.typeid])/@history.avg)*100 )%>%</td>
+				<td><a href="/history/<%= @item.typeid  %>">History</a></td>	
+			</tr>
+			<% end %>
+		<% end %>
+	</tbody>
+</table>
+
+<script>
+	$(document).ready(function() {
+		$("table").tablesorter();
+		$(".tcenter").css("text-align", "center");
+	});
+</script>

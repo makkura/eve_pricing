@@ -1,0 +1,47 @@
+This project is to give pricing history and estimated market cost of specific items in EVE Online within a limited sector of space.
+
+Notes: 
+This project was written for specific usage and lacks configuration options outside of editing the files directly (no config file).
+There is no security for item addition, management, or deletion in place.
+
+Routes:
+get /materials
+-- Lists information on all materials including the last pulled pricing information
+get /items
+-- Lists information on all items including the last pulling pricing information and estimated price from market cost of purchases required materials
+get /items/new
+-- Form for inputting a new item (id, n ame, and quantity crafted per craft attempt)
+get /items/manage/:id
+-- Form for updating an item's required submaterials
+get /history/:id
+-- Shows history graph of the given material or item id 
+-- Uses AMCharts: https://www.amcharts.com/
+get /price/:id
+-- Shows the pricing information for the specified item and the materials to produce it
+get /quote
+-- Default page
+-- Form allowing selection of items to generate an estimated cost list and pricing values
+
+post /items/new
+-- Adds the item listed to the items list unless it already exists
+post /items/delete/:id
+-- Deletes the given item id
+post /items/manage/:id
+-- Updates the submaterial quantities for the given item id
+
+Files:
+eve_items.rb 
+-- Inputs watched items and their ids into the database
+-- Do not run directly. Uncomment corresponding lines in eve_ruby_full.rb for first run only.
+eve_materials.rb
+-- Inputs watched materials and their ids into the database
+-- Do not run directly. Uncomment corresponding lines in eve_ruby_full.rb for first run only.
+eve_recipes.rb
+-- Inputs the recipes of base materials for each item
+-- Do not run directly. Uncomment corresponding lines in eve_ruby_full.rb for first run only.
+eve_ruby_full.rb
+-- Gets the market price of every item in the database from http://api.eve-central.com
+-- This should be scheduled to run periodically
+eve_schema.rb
+-- Defines classes for Materials, Items, Recipes, and History
+-- Include, do not call directly

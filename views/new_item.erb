@@ -1,0 +1,91 @@
+<script src='/vendor/jquery-1.9.1.min.js'></script>
+<script src='/vendor/jquery_tablesorter/jquery.tablesorter.js'></script>
+<style>
+        table.tablesorter thead tr th { text-align: center; }
+        table.tablesorter tbody tr td { text-align: right; }
+        .tcenter { text-align: center; }
+        .tright  { text-align: right; }
+
+        .right {
+                position: relative;
+                float: right
+        }
+
+        .error {
+                background-color: red;
+        }
+        .good {
+                background-color: green;
+        }
+
+        #alerts {
+                padding: 5px 5px 5px 5px;
+        }
+</style>
+<style>
+        [contenteditable="true"]:focus { background-color: #33DD11; }
+        [contenteditable="true"]:hover { outline: 1px dashed black; contenteditable: true; }
+</style>
+
+<div id="alerts"></div>
+<table class="tablesorter" id="manage_item">
+        <thead>
+                <tr>
+                        <th>Name</th>
+                        <th>TypeId</th>
+                        <th>Quantity</th>
+                </tr>
+        </thead>
+        <tbody>
+                <tr>
+                        <td id="name" contenteditable="true"></td>
+                        <td id="typeid" contenteditable="true"></td>
+                        <td id="quantity" contenteditable="true"></td>
+                </tr>
+        </tbody>
+</table>
+<button id="update">Update Record</button>
+
+<script>
+        $(document).ready(function() {
+                $("table").tablesorter();
+                $(".tcenter").css("text-align", "center");
+
+                $('#update').click(function(){
+                        // item info
+                        name = $('#name').text();
+                        typeid = $('#typeid').text();
+                        quantity = $('#quantity').text();
+			
+                        data_out = JSON.stringify({ id: typeid, name: name, quantity: quantity });
+                        console.log(data_out);
+                        $.ajax({
+                                url: '/items/new',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                type: 'POST',
+                                data: data_out,
+                                accepts: "application/json",
+                                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                        $('#alerts').text(textStatus + ' ' + errorThrown);
+                                        $('#alerts').removeClass("good");
+                                        $('#alerts').addClass("error");
+                                },
+                                success: function(json) {
+                                        if(json["Error"]){
+                                                $('#alerts').text(json["Error"]);
+                                                $('#alerts').addClass("error");
+                                                $('#alerts').removeClass("good");
+                                        } else {
+                                                $('#alerts').text("Entry Updated");
+                                                $('#alerts').addClass("good");
+                                                $('#alerts').removeClass("error");
+						window.location.href = "../items/manage/"+typeid;
+                                        }
+                                }
+                        })
+                });
+
+        });
+</script>
+

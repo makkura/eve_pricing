@@ -1,0 +1,161 @@
+
+<script src='/vendor/jquery-1.9.1.min.js'></script>
+<script src='/vendor/jquery_tablesorter/jquery.tablesorter.js'></script>
+<style>
+        table.tablesorter thead tr th { text-align: center; }
+        table.tablesorter tbody tr td { text-align: right; }
+        .tcenter { text-align: center; }
+        .tright  { text-align: right; }
+
+	.right { 
+		position: relative;
+		float: right 
+	}
+
+	.error {
+		background-color: red;
+	}
+	.good {
+		background-color: green;
+	}
+
+	#alerts {
+		padding: 5px 5px 5px 5px;
+	}
+</style>
+<style>
+	[contenteditable="true"]:focus { background-color: #33DD11; }
+	[contenteditable="true"]:hover { outline: 1px dashed black; contenteditable: true; }
+</style>
+
+<div id="alerts"></div>
+<table class="tablesorter" id="manage_item">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>TypeId</th>
+			<th>Quantity</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td id="name" contenteditable="true"><%= @item.name %></td>
+			<td id="typeid" contenteditable="true"><%= @item.typeid %></td>
+			<td id="quantity" contenteditable="true"><%= @item.quantity %></td>
+		</tr>
+	</tbody>
+</table>
+<br>
+<table class="tablesorter" id="manage_recipe">
+	<thead>
+		<tr>
+			<th>Tritanium</th>
+			<th>Pyerite</th>
+			<th>Mexallon</th>
+			<th>Isogen</th>
+			<th>Nocxium</th>
+			<th>Zydrine</th>
+			<th>Megacyte</th>
+			<th>Morphite</th>
+		</tr>
+	</thead>
+	<tbody>	
+		<tr>
+			<td id="tritanium" contenteditable="true"><%= @recipe[:tritanium] %></td>
+			<td id="pyerite" contenteditable="true"><%= @recipe[:pyerite] %></td>
+			<td id="mexallon" contenteditable="true"><%= @recipe[:mexallon] %></td>
+			<td id="isogen" contenteditable="true"><%= @recipe[:isogen] %></td>
+			<td id="nocxium" contenteditable="true"><%= @recipe[:nocxium] %></td>
+			<td id="zydrine" contenteditable="true"><%= @recipe[:zydrine] %></td>
+			<td id="megacyte" contenteditable="true"><%= @recipe[:megacyte] %></td>
+			<td id="morphite" contenteditable="true"><%= @recipe[:morphite] %></td>
+		</tr>	
+	</tbody>
+</table>
+<button id="update">Update Record</button>
+<button id="delete">Delete Record</button>
+
+<script>
+        $(document).ready(function() {
+                $("table").tablesorter();
+                $(".tcenter").css("text-align", "center");
+
+		$('#delete').click(function(){
+			typeid = $('#typeid').text();
+			data_out = JSON.stringify({ typeid: typeid });
+			$.ajax({
+                                url: '/items/delete/'+typeid,
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                type: 'POST',
+                                data: data_out,
+                                accepts: "application/json",
+                                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                        $('#alerts').text(textStatus + ' ' + errorThrown);
+                                        $('#alerts').removeClass("good");
+                                        $('#alerts').addClass("error");
+                                },
+                                success: function(json) {
+                                        if(json["Error"]){
+                                                $('#alerts').text(json["Error"]);
+                                                $('#alerts').addClass("error");
+                                                $('#alerts').removeClass("good");
+                                        } else {
+                                                $('#alerts').text("Entry Removed");
+                                                $('#alerts').addClass("good");
+                                                $('#alerts').removeClass("error");
+                                        }
+                                }
+                        })
+		
+
+		});
+
+		$('#update').click(function(){
+			// item info
+			name = $('#name').text();
+			typeid = $('#typeid').text();
+			quantity = $('#quantity').text();
+
+			// material info
+			tritanium = $('#tritanium').text();
+			pyerite = $('#pyerite').text();
+			mexallon = $('#mexallon').text();
+			isogen = $('#isogen').text();
+			nocxium = $('#nocxium').text();
+			zydrine = $('#zydrine').text();
+			megacyte = $('#megacyte').text();
+			morphite = $('#morphite').text();
+
+
+			data_out = JSON.stringify({ id: typeid, name: name, quantity: quantity, tritanium: tritanium, pyerite: pyerite, mexallon: mexallon, isogen: isogen, nocxium: nocxium, zydrine: zydrine, megacyte: megacyte, morphite: morphite});
+			console.log(data_out);
+			$.ajax({
+				url: '/items/manage/<%=@item.typeid%>',
+				dataType: 'json',
+				contentType: 'application/json',
+				type: 'POST',
+				data: data_out,
+				accepts: "application/json",
+				error: function(XMLHttpRequest, textStatus, errorThrown) {
+					$('#alerts').text(textStatus + ' ' + errorThrown);
+					$('#alerts').removeClass("good");
+					$('#alerts').addClass("error");
+				},
+				success: function(json) {
+					if(json["Error"]){
+						$('#alerts').text(json["Error"]);
+						$('#alerts').addClass("error");
+						$('#alerts').removeClass("good");
+					} else {
+						$('#alerts').text("Entry Updated");
+						$('#alerts').addClass("good");
+						$('#alerts').removeClass("error");
+					}
+				}
+			})
+		});
+
+        });
+</script>
+

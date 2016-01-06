@@ -1,0 +1,36 @@
+<script src='/vendor/jquery-1.9.1.min.js'></script>
+<script src='/vendor/jquery_tablesorter/jquery.tablesorter.js'></script>
+<style>
+        table.tablesorter thead tr th { text-align: right; }
+        table.tablesorter tbody tr td { text-align: right; }
+        .tcenter { text-align: center; }
+        .tright  { text-align: right; }
+</style>
+
+
+<h3><%= @title %></h3>
+<p><b>Average Purchase Price</b>: <%= "%.2f" % @current_average %>
+<p><b>Average Material Purchase Price</b>: <%= "%.2f" % @total %>
+<br><br>
+
+<table cellspacing="1" class="tablesorter" id="materials">
+        <thead>
+                <tr>
+                        <th>Material</th>
+			<th>Average</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                <tr>
+        </thead>
+        <tbody>
+                <% for @entry in @list %>
+                    <tr>
+                        <td class="tcenter"><%= @entry[:name] %></td>
+                        <td class="tright"><%= "%.2f" % @entry[:average] %></td>
+                        <td class="tright"><%= @entry[:quantity] %></td>
+                        <td class="tright"><%= "%.2f" % @entry[:price] %></td>
+                    </tr>
+                <% end %>
+        </tbody>
+</table>
+

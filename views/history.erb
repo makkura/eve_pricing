@@ -1,0 +1,121 @@
+<script type="text/javascript" src="../vendor/amcharts/amcharts.js"></script>
+<script type="text/javascript" src="../vendor/amcharts/serial.js"></script>
+<script type="text/javascript" src="../vendor/amcharts/themes/chalk.js"></script>
+
+<style>
+@import url(http://fonts.googleapis.com/css?family=Covered+By+Your+Grace);
+</style>
+<div id="graphnav">
+	<ul class="nav nav-pills">
+		<% first = true
+		   @data.each do |key, item| %>
+			<% if first
+				first = false %>
+				<li id="<%= item[:name] %>" class="active" ><a href="#"><%= item[:name] %></a></li>
+			<% else %>
+				<li id="<%= item[:name] %>" ><a href="#"><%= item[:name] %></a></li>
+			<% end %>
+		<% end %>
+	</ul>
+</div>
+<% first = true
+   @data.each do |key, item| %>
+	<% chartname = item[:name].downcase + "chart" %>
+<div id="<%= chartname %>" class="dynamic-chart"></div>
+<style>
+#<%= chartname %> {background: #282828 url('../vendor/amcharts/images/chalkbg.jpg');color: #fff;
+        width   : 100%;
+        height  : 500px;
+	<% if first %>
+		display : block;
+	<% else %>
+		display : none;
+	<% end %>
+}
+</style>
+<script>
+$('#<%= item[:name] %>').click(function(){
+	$('#graphnav > ul > li').removeClass('active');
+	$(this).addClass('active');
+	
+	$('.dynamic-chart').css('display', 'none');
+	$('#<%= chartname %>').css('display', 'block');
+	if (typeof <%= chartname %>.zoomToIndexes === 'undefined')
+	{
+		create<%= chartname %>();
+	}
+});
+
+function create<%= chartname %>() {
+var <%= chartname %> = AmCharts.makeChart("<%= chartname %>", {
+        "type": "serial",
+        "theme": "chalk",
+        "pathToImages": "../vendor/amcharts/images/",
+        "dataDateFormat": "YYYY-MM-DD JJ:NN:SS",
+        "valueAxes": [{
+            "axisAlpha": 0,
+            "position": "left"
+        }],
+        "graphs": [{
+			"id": "g1",
+            "bullet": "round",
+            "bulletBorderAlpha": 1,
+            "bulletColor": "#FFFFFF",
+            "bulletSize": 5,
+            "hideBulletsCount": 50,
+            "lineThickness": 2,
+            "title": "<%= item[:name] %>",
+            "useLineColorForBulletBorder": true,
+            "valueField": "value"
+        }],
+        "chartScrollbar": {
+			"graph": "g1",
+			"scrollbarHeight": 30
+		},
+        "chartCursor": {
+            "cursorPosition": "mouse",
+            "pan": true
+        },
+        "categoryField": "date",
+        "categoryAxis": {
+            "parseDates": true,
+            "dashLength": 1,
+            "minorGridEnabled": true,
+            "position": "top",
+	    "minPeriod": "hh",
+	    "equalSpacing": true
+        },
+        exportConfig:{
+          menuRight: '20px',
+          menuBottom: '50px',
+          menuItems: [{
+          icon: 'http://www.amcharts.com/lib/3/images/export.png',
+          format: 'png'	  
+          }]  
+        },
+        "dataProvider":[
+		<% item[:data].each do |hist| %>
+			<% if item[:data].last[:timestamp] == hist[:timestamp] %>
+				{ "date": "<%= hist[:timestamp] %>", value: <%= hist[:data] %>}
+			<% else %>
+        			{ "date": "<%= hist[:timestamp] %>", value: <%= hist[:data] %>},
+			<% end %>
+		<% end %>
+	]
+});
+
+<%= chartname %>.addListener("rendered", function(){
+	<%= chartname %>zoomChart;
+});
+<%= chartname %>zoomChart();
+function <%= chartname %>zoomChart(){
+    <%= chartname %>.zoomToIndexes(<%= chartname %>.dataProvider.length - 40, <%= chartname %>.dataProvider.length - 1);
+}
+}
+<% if first 
+	first = false %>
+	create<%=chartname%>();
+<% end %>
+
+</script>
+<% end %>

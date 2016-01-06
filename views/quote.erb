@@ -1,0 +1,183 @@
+<html>
+<head>
+<link href="/vendor/jquery-ui/jquery-ui.css" rel="stylesheet"/>
+<link href="/vendor/appendgrid/jquery.appendGrid-1.4.0.min.css" rel="stylesheet"/>
+<script type="text/javascript" src="/vendor/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="/vendor/jquery-ui/jquery-ui.js"></script>
+<script type="text/javascript" src="/vendor/appendgrid/jquery.appendGrid-1.4.0.min.js"></script>
+<script type="text/javascript">
+	
+	var ItemNames = <%= @item_names %>;
+	var ItemDetails = <%= @item_details.to_json() %>;
+
+        function UpdateTotals(){
+                var total = 0;
+                $("input[name^='tblAppendGrid_ItemTotal']").each(function(){
+			if( $.isNumeric(parseFloat($(this).val())) ){
+ 	         	       total = total + parseFloat($(this).val());
+			}
+                });
+		console.log("Updating total to " + total);
+		// Total * Percentage * [1 + (tax + brokerage)]
+		tax = 1;
+		if( $.isNumeric($('#taxrate').text()) ){
+			tax = $('#taxrate').text();
+		}
+		brokerage = 1.5;
+		if( $.isNumeric($('#brokeragefee').text()) ){
+			brokerage = $('#brokeragefee').text();
+		}
+		tax_multiplier = 1 + (parseFloat(tax)/100 + parseFloat(brokerage)/100);
+		console.log("Tax: " + tax + " Brokerage: " + brokerage + " TaxMulti: " + tax_multiplier);
+	        $("#final_total").html((total * tax_multiplier).toFixed(2));
+		$('#10_prcnt').html((total * 1.10 * tax_multiplier).toFixed(2));
+		$('#20_prcnt').html((total * 1.20 * tax_multiplier).toFixed(2));
+		$('#30_prcnt').html((total * 1.30 * tax_multiplier).toFixed(2));
+		$('#40_prcnt').html((total * 1.40 * tax_multiplier).toFixed(2));
+		$('#50_prcnt').html((total * 1.50 * tax_multiplier).toFixed(2));
+
+        }
+
+	function QuantityChange(evt, rowIndex){
+		quantity = $('#tblAppendGrid').appendGrid('getCtrlValue', 'Quantity', rowIndex);
+		purchase_price = parseFloat( $('#tblAppendGrid').appendGrid('getCtrlValue', 'PurchasePrice', rowIndex) );
+		build_price =    parseFloat( $('#tblAppendGrid').appendGrid('getCtrlValue', 'BuildPrice', rowIndex) );
+
+		price = 0;
+		if( build_price == 0) {
+			price = purchase_price;
+		} else if( purchase_price > build_price ){
+			price = build_price;
+		} else if ( build_price >= purchase_price ){
+			price = purchase_price;
+		}
+
+		total = quantity * price;
+		if( total < 0){
+			total = 0;
+		}
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'UsingPrice', rowIndex, price.toFixed(2));
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'ItemTotal', rowIndex, total.toFixed(2));
+		UpdateTotals();
+	}
+
+	function ItemChange(evt, rowIndex) {
+		value = $('#tblAppendGrid').appendGrid('getCtrlValue', 'Item', rowIndex);
+		bGood = ( $.inArray(value, ItemNames) >= 0 ? true : false )
+		if( bGood ) {
+			PopulateRow(rowIndex);
+			return true;
+		}
+		var closest = "";
+		$.each(ItemNames, function(index, val){
+			if( val.toLowerCase().indexOf(value.toLowerCase()) >= 0){
+				closest = val;
+				return false; // break looping	
+			}
+		});
+		if( closest.length == 0) {
+			closest = ItemNames[0];
+		}
+
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'Item', rowIndex, closest);
+		PopulateRow(rowIndex);
+		return true;
+	};
+
+	function PopulateRow(rowIndex) {
+		item_name = $('#tblAppendGrid').appendGrid('getCtrlValue', 'Item', rowIndex);
+		item_purchase = ItemDetails[item_name]["purchase"];
+		item_build = ItemDetails[item_name]["build"];
+		item_quantity = ItemDetails[item_name]["quantity"];
+		
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'PurchasePrice', rowIndex, item_purchase);
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'BuildPrice', rowIndex, item_build);
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'Quantity', rowIndex, '1');
+		$('#tblAppendGrid').appendGrid('setCtrlValue', 'CraftQuantity', rowIndex, item_quantity);
+		QuantityChange(null, rowIndex);
+	}
+
+
+	$(function(){
+		$('#tblAppendGrid').appendGrid({
+			caption: 'Item Quote',
+			initRows: 1,
+			columns: [
+				{ name: 'Item', display: 'Item', cellCss: { 'min-width': '250px' }, type: 'ui-autocomplete', uiOption: { source: ItemNames }, onChange: function(evt, rowIndex){ItemChange(evt, rowIndex)} },
+				{ name: 'Quantity', display: 'Run', type: 'text', ctrlAttr: { maxlength: 4 },  onChange: function(evt, rowIndex){QuantityChange(evt, rowIndex)} },
+				{ name: 'CraftQuantity', display: 'Crafted', type: 'text', ctrlProp: {disabled:true}},
+				{ name: 'PurchasePrice', display: 'Purchase', type: 'number', cellCss: { 'max-width': '100px' }, ctrlProp: {disabled:true}},
+				{ name: 'BuildPrice', display: 'Build', type: 'number', cellCss: { 'max-width': '100px' }, ctrlProp: {disabled:true}},
+				{ name: 'UsingPrice', display: 'Using', type: 'number', cellCss: { 'max-width': '100px' }, ctrlProp: {disabled:true}},
+				{ name: 'ItemTotal', display: 'Total', type: 'number', ctrlProp: {disabled:true}}
+			],
+			afterRowInserted: function(caller, parentRowIndex, addedRowIndex){
+				RefreshEvents();
+			},
+			afterRowAppended: function(caller, parentRowIndex, addedRowIndex){
+				RefreshEvents();
+			},
+			hideButtons: {
+				append: true,
+				removeLast: true,
+				moveUp: true,
+				moveDown: true
+			}
+		});
+
+		function RefreshEvents(){
+			$('.ui-autocomplete-input').focusout(function(event, ui){
+				$(this).trigger("change");
+			});
+		}
+		// call once for initial setup
+		RefreshEvents();
+		$('#taxrate,#brokeragefee').bind('input',function(){
+			UpdateTotals();
+		});
+
+	});
+</script>
+</head>
+<body>
+<br>
+	<table id="tblAppendGrid"></table>
+	<table class="tablesorter" id="fees">
+        <thead>
+                <tr>
+                        <th>Tax Rate</th>
+                        <th>Brokerage Fee</th>
+                </tr>
+        </thead>
+        <tbody>
+                <tr>
+                        <td id="taxrate" contenteditable="true">1.5</td>
+                        <td id="brokeragefee" contenteditable="true">1</td>
+                </tr>
+        </tbody>
+	</table>
+
+	<table class="tablesorter" id="prices">
+	<thead>
+		<tr>
+			<th>Total</th>
+			<th>10% Profit</th>
+			<th>20% Profit</th>
+			<th>30% Profit</th>
+			<th>40% Profit</th>
+			<th>50% Profit</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td id="final_total">-</td>
+			<td id="10_prcnt">-</td>
+			<td id="20_prcnt">-</td>
+			<td id="30_prcnt">-</td>
+			<td id="40_prcnt">-</td>
+			<td id="50_prcnt">-</td>	
+		</tr>
+	</tbody>
+	</table>
+</body>
+</html>
